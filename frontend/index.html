@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Studio Pro</title>
+    <style>
+        :root {
+            --primary: #000000;
+            --secondary: #666666;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #e5e7eb;
+            --bg: #ffffff;
+            --card-bg: #f9fafb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
+            margin: 0;
+            padding: 40px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header { margin-bottom: 32px; }
+        .header h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+        .header p { color: var(--secondary); margin: 4px 0 0; font-size: 14px; }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        label { font-size: 12px; font-weight: 600; color: var(--secondary); text-transform: uppercase; }
+        
+        input, textarea, select {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus { border-color: var(--primary); }
+
+        textarea { width: 100%; height: 120px; font-family: "SF Mono", "Consolas", monospace; resize: vertical; box-sizing: border-box;}
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+        }
+
+        .button-group { display: flex; gap: 8px; align-items: center; }
+
+        button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-test { background: #fff; border: 1px solid var(--border); }
+        .btn-test:hover { background: #f3f4f6; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { opacity: 0.8; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+
+        .select-container { display: flex; gap: 8px; min-width: 220px; justify-content: flex-end; }
+        select { width: 100px; }
+
+        #delim { 
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.2s;
+        }
+        #delim.hidden { visibility: hidden; opacity: 0; }
+
+        .status-pill {
+            display: inline-block;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 100px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .table-container {
+            margin-top: 32px;
+            overflow-x: auto;
+            border-top: 1px solid var(--border);
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        th { padding: 12px; border-bottom: 2px solid var(--border); background: #fefefe; color: var(--secondary); font-weight: 600; position: sticky; top: 0; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); color: #444; }
+        tr:hover { background: #f9fafb; }
+
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>SQL Studio</h1>
+        <p>Expert Data Extraction & Export</p>
+    </div>
+
+    <div class="card">
+        <label>Connection Details</label>
+        <div class="grid" style="margin-top: 12px;">
+            <div class="input-group"><input type="text" id="server" placeholder="Server Address"></div>
+            <div class="input-group"><input type="text" id="db" placeholder="Database Name"></div>
+            <div class="input-group"><input type="text" id="user" placeholder="Username"></div>
+            <div class="input-group"><input type="password" id="pass" placeholder="Password"></div>
+        </div>
+        <button class="btn-test" id="testBtn" onclick="testConnection()">Test Connection</button>
+        <div id="connStatus" class="status-pill"></div>
+    </div>
+
+    <div class="card">
+        <label>SQL Query</label>
+        <div style="margin-top: 12px;">
+            <textarea id="query" placeholder="select * from USERS where ID = 1"></textarea>
+        </div>
+        
+        <div class="toolbar">
+            <div class="button-group">
+                <button class="btn-primary" id="runBtn" onclick="handleAction('execute')">Run Query</button>
+                <button class="btn-test" id="dlBtn" onclick="handleAction('download')">Download</button>
+            </div>
+            
+            <div class="select-container">
+                <select id="format" onchange="updateUI()">
+                    <option value="csv">CSV</option>
+                    <option value="txt">TXT</option>
+                    <option value="excel">Excel</option>
+                </select>
+                <select id="delim">
+                    <option value=",">Comma</option>
+                    <option value="^">Caret</option>
+                    <option value="|">Pipe</option>
+                    <option value="&#9;">Tab</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div id="tableOut" class="table-container"></div>
+</div>
+
+<script>
+    const API = "http://127.0.0.1:8000";
+    
+    function updateUI() {
+        const format = document.getElementById('format').value;
+        const delim = document.getElementById('delim');
+        format === 'excel' ? delim.classList.add('hidden') : delim.classList.remove('hidden');
+    }
+
+    // Helper to get all inputs
+    function getPayload() {
+        return {
+            SERVER: document.getElementById('server').value,
+            DATABASE: document.getElementById('db').value,
+            USERNAME: document.getElementById('user').value,
+            PASSWORD: document.getElementById('pass').value,
+            QUERY: document.getElementById('query').value.toLowerCase(), // Enforce your preference
+            DELIMITER: document.getElementById('delim').value,
+            FORMAT: document.getElementById('format').value
+        };
+    }
+
+    async function testConnection() {
+        const btn = document.getElementById('testBtn');
+        const status = document.getElementById('connStatus');
+        btn.innerText = "Testing...";
+        
+        try {
+            const res = await fetch(`${API}/test-connection`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(getPayload())
+            });
+            const data = await res.json();
+            
+            status.style.display = "inline-block";
+            if (res.ok) {
+                status.innerText = "Connection Verified";
+                status.style.background = "#d1fae5";
+                status.style.color = "#065f46";
+            } else {
+                throw new Error(data.detail || "Connection Failed");
+            }
+        } catch (e) {
+            status.style.display = "inline-block";
+            status.innerText = e.message;
+            status.style.background = "#fee2e2";
+            status.style.color = "#991b1b";
+        } finally {
+            btn.innerText = "Test Connection";
+        }
+    }
+
+    async function handleAction(type) {
+        const runBtn = document.getElementById('runBtn');
+        const tableDiv = document.getElementById('tableOut');
+        
+        if(type === 'execute') runBtn.innerText = "Running...";
+
+        try {
+            const endpoint = type === 'execute' ? '/execute-sql' : '/download';
+            const res = await fetch(`${API}${endpoint}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(getPayload())
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                alert("Error: " + (err.detail || "Query Failed"));
+                return;
+            }
+
+            if (type === 'execute') {
+                const responseData = await res.json();
+                renderTable(responseData.data); // Passing the array safely
+            } else {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `export_${Date.now()}.${document.getElementById('format').value === 'excel' ? 'xlsx' : 'csv'}`;
+                a.click();
+            }
+        } catch (e) {
+            alert("Connection Error: " + e.message);
+        } finally {
+            runBtn.innerText = "Run Query";
+        }
+    }
+
+    function renderTable(data) {
+        const container = document.getElementById('tableOut');
+        
+        // Safety check: if data is null or not an array, prevent .map error
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            container.innerHTML = "<p style='padding:20px; color:var(--secondary)'>No results found or empty dataset.</p>";
+            return;
+        }
+
+        const columns = Object.keys(data[0]);
+        
+        let html = '<table><thead><tr>';
+        columns.forEach(col => html += `<th>${col}</th>`);
+        html += '</tr></thead><tbody>';
+
+        data.forEach(row => {
+            html += '<tr>';
+            columns.forEach(col => {
+                // Handle null/NaN values visually
+                const val = row[col];
+                html += `<td>${(val === null || val === undefined) ? '<em style="color:#ccc">null</em>' : val}</td>`;
+            });
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>
